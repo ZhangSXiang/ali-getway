@@ -7,11 +7,11 @@ import requests
 # 正式/测试stage切换
 stage = 'RELEASE'
 # 域名
-host = 'wespublicapi.fanglife.net'
+host = 'example.com'
 # 阿里云应用  key
-key = '203811487'
+key = '201354129'
 # 阿里云应用  密钥
-secret = 'mcffkza60kr4ci9kwizmqocny7asttdg'
+secret = 'mcffkza123213sadassafny7asttdg'
 # http/https协议
 channel = 'http'
 
@@ -69,5 +69,5 @@ if __name__ == '__main__':
     # 请求参数
     send_data = {'user': "admin"}
     # 请求方法GET/POST
-    a = request('/api/premanage/newdiskpredict', 'get', send_data, {})
+    a = request('/api/demo/test', 'get', send_data, {})
     print(a.text)
