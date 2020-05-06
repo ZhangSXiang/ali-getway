@@ -1,0 +1,73 @@
+import base64
+import hmac
+import time
+import uuid
+import requests
+
+# 正式/测试stage切换
+stage = 'RELEASE'
+# 域名
+host = 'wespublicapi.fanglife.net'
+# 阿里云应用  key
+key = '203811487'
+# 阿里云应用  密钥
+secret = 'mcffkza60kr4ci9kwizmqocny7asttdg'
+# http/https协议
+channel = 'http'
+
+
+def request(path, method: str, params: dict, data: dict):
+    '''
+    阿里云网关请求方法
+    :param path: 请求路径 (不包括域名)
+    :param method: 请求方式 get/post
+    :param params: query参数
+    :param data: body参数
+    :return: 响应
+    '''
+    # 初始化请求头
+    headers = {
+        "Host": host,
+        "X-Ca-Timestamp": str(int(time.time() * 1000)),
+        "gateway_channel": channel,
+        "X-Ca-Request-Mode": "debug",
+        "X-Ca-Key": key,
+        "X-Ca-Stage": stage,
+        "X-Ca-Nonce": str(uuid.uuid1()),
+        "Content-Type": "application/x-www-form-urlencoded; charset=UTF-8",
+        "X-Ca-Signature-Headers": "X-Ca-Timestamp,X-Ca-Request-Mode,X-Ca-Key,X-Ca-Stage",
+        "X-Ca-Signature": ""
+    }
+    # 参与签名的参数
+    HTTPMethod = method.upper()
+    Accept = '*/*'
+    Content_MD5 = ''
+    Content_Type = headers['Content-Type']
+    Date = ''
+    Headers = ''
+    Headers += 'X-Ca-Key:{}\n'.format(headers['X-Ca-Key'])
+    Headers += 'X-Ca-Request-Mode:{}\n'.format(headers['X-Ca-Request-Mode'])
+    Headers += 'X-Ca-Stage:{}\n'.format(headers['X-Ca-Stage'])
+    Headers += 'X-Ca-Timestamp:{}\n'.format(headers['X-Ca-Timestamp'])
+    query = '&'.join([f'{k}={params[k]}' for k in sorted(params)])
+    query += '&'.join([f'{k}={data[k]}' for k in sorted(data)])
+    url_query = f'{path}?{query}' if query else path
+    # 被签名原数据
+    sign = HTTPMethod + '\n' + Accept + '\n' + Content_MD5 + '\n' + Content_Type + '\n' + Date + '\n' + Headers + url_query
+    # 进行签名
+    signature_hmac = hmac.new(secret.encode('utf-8'), sign.encode('utf-8'), 'sha256')
+    signature = base64.b64encode(signature_hmac.digest())
+    # 把签名放进headers
+    headers['X-Ca-Signature'] = signature.decode('utf8')
+    # 发送请求
+    response = requests.request(method, url=f"{channel}://{host}{path}", headers=headers, params=params, data=data,
+                                timeout=25)
+    return response
+
+
+if __name__ == '__main__':
+    # 请求参数
+    send_data = {'user': "admin"}
+    # 请求方法GET/POST
+    a = request('/api/premanage/newdiskpredict', 'get', send_data, {})
+    print(a.text)
